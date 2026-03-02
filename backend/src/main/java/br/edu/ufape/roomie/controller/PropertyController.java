@@ -1,6 +1,7 @@
 package br.edu.ufape.roomie.controller;
 
 import br.edu.ufape.roomie.dto.PropertyRequestDTO;
+import br.edu.ufape.roomie.dto.PropertyResponseDTO;
 import br.edu.ufape.roomie.enums.PropertyStatus;
 import br.edu.ufape.roomie.model.Property;
 import br.edu.ufape.roomie.model.User;
@@ -81,6 +82,11 @@ public class PropertyController {
         User user = (User) authentication.getPrincipal();
         List<PropertyDetailView> properties = propertyRepository.findMyDetails(user.getEmail());
         return ResponseEntity.ok(properties);
+    }
+
+    @GetMapping("/announcements/{id}")
+    public ResponseEntity<PropertyResponseDTO> getDetails(@PathVariable Long id) {
+        return ResponseEntity.ok(propertyService.getPropertyDetails(id));
     }
 
     @PatchMapping("/{id}/publish")

@@ -10,6 +10,9 @@ import lombok.NoArgsConstructor;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 @Entity
 @Table(name = "habito")
 @Data
@@ -28,7 +31,8 @@ public class Habit {
     private Student student;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "horario_estudo")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "horario_estudo", columnDefinition = "horarios")
     private StudySchedule studySchedule;
 
     @OneToMany(mappedBy = "habit", cascade = CascadeType.ALL, orphanRemoval = true)
