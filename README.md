@@ -81,10 +81,6 @@ recursiva:
 ```bash
 # Clone o repositório principal baixando também o submodule do banco
 git clone --recurse-submodules https://github.com/MocoGroup/roomie-releases-db-fork
-
-# Entre na pasta do projeto
-cd roomie
-
 ```
 
 #### Esqueceu da flag recursiva?
