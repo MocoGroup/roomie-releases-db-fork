@@ -104,6 +104,7 @@ public class NotificationService {
                 </html>
                 """.formatted(owner.getName(), property.getTitle(), studentInfo);
 
+        log.info("Tentando enviar e-mail para {} ({}) — remetente: {}", owner.getName(), owner.getEmail(), mailFrom);
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -112,12 +113,13 @@ public class NotificationService {
             helper.setSubject(subject);
             helper.setText(html, true);
             mailSender.send(message);
-            log.info("E-mail de interesse enviado para {} ({})", owner.getName(), owner.getEmail());
+            log.info("E-mail de interesse enviado com sucesso para {} ({})", owner.getName(), owner.getEmail());
         } catch (MessagingException e) {
-            log.error("Falha ao montar e-mail de interesse para {}: {}", owner.getEmail(), e.getMessage(), e);
+            log.error("Falha ao montar e-mail de interesse para {} — causa: {}", owner.getEmail(), e.getMessage(), e);
         } catch (Exception e) {
             // Captura MailException e qualquer outro erro SMTP
-            log.error("Falha ao enviar e-mail de interesse para {} [{}]: {}", owner.getEmail(), e.getClass().getSimpleName(), e.getMessage(), e);
+            log.error("Falha ao enviar e-mail de interesse para {} [{}] — causa: {} | mensagem: {}",
+                    owner.getEmail(), e.getClass().getName(), e.getCause(), e.getMessage(), e);
         }
     }
 }
