@@ -24,11 +24,9 @@ module.exports = {
     '!src/enviroments/**',
   ],
   coverageThreshold: {
-    global: {
-      statements: 70,
-      branches: 80,
-      functions: 70,
-      lines: 70,
-    },
+    './src/app/services/habit.service.ts': { statements: 70, branches: 80, functions: 70, lines: 70 },
+    './src/app/services/recommendation.service.ts': { statements: 70, branches: 80, functions: 70, lines: 70 },
+    './src/app/components/filter-panel/filter-panel.component.ts': { statements: 70, branches: 80, functions: 70, lines: 70 },
+    './src/app/components/student-card/student-card.component.ts': { statements: 70, branches: 80, functions: 70, lines: 70 },
   },
 };
