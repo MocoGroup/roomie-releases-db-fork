@@ -21,6 +21,14 @@
   font-size: 26px;
   cursor: pointer;
   user-select: none;
+  display: flex;
+  align-items: center;
+}
+
+.logo-img {
+  height: 44px;
+  width: auto;
+  display: block;
 }
 
 /* === HEADER BUTTONS AREA === */
@@ -245,6 +253,10 @@
 
   .logo-text {
     font-size: 22px;
+  }
+
+  .logo-img {
+    height: 34px;
   }
 
   .header-buttons {

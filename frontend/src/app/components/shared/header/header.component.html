@@ -1,5 +1,7 @@
 <header class="topbar-blue">
-  <button (click)="onLogoClick()" class="logo-text" title="Início">Roomie</button>
+  <button (click)="onLogoClick()" class="logo-text" title="Início">
+    <img src="/negativo_h.svg" alt="Logo do Roomie" class="logo-img">
+  </button>
 
   <div class="header-buttons">
     <button (click)="goToCreateProperty()" *ngIf="showCreateProperty" class="outline-btn">
