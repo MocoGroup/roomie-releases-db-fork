@@ -1,5 +1,24 @@
 package br.edu.ufape.roomie.service;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import br.edu.ufape.roomie.dto.InterestSummaryDTO;
 import br.edu.ufape.roomie.enums.InterestStatus;
 import br.edu.ufape.roomie.model.Interest;
@@ -8,22 +27,6 @@ import br.edu.ufape.roomie.model.Student;
 import br.edu.ufape.roomie.model.User;
 import br.edu.ufape.roomie.repository.InterestRepository;
 import br.edu.ufape.roomie.repository.PropertyRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class InterestServiceTest {
@@ -156,6 +159,27 @@ class InterestServiceTest {
 
         assertThat(interest.getStatus()).isEqualTo(InterestStatus.ACCEPTED);
         verify(interestRepository, times(1)).save(interest);
+    }
+
+    @Test
+    @DisplayName("Não deve lançar erro ao pedir alteração para o mesmo status já definido")
+    void testaAtualizarStatusMesmoValor() {
+        // interest começa com PENDING
+        when(interestRepository.findById(10L)).thenReturn(Optional.of(interest));
+
+        // atualizar para o mesmo status
+        interestService.updateInterestStatus(10L, InterestStatus.PENDING, owner);
+
+        assertThat(interest.getStatus()).isEqualTo(InterestStatus.PENDING);
+        verify(interestRepository, times(1)).save(interest);
+
+        // agora simula interesse já aceito
+        interest.setStatus(InterestStatus.ACCEPTED);
+        when(interestRepository.findById(10L)).thenReturn(Optional.of(interest));
+
+        interestService.updateInterestStatus(10L, InterestStatus.ACCEPTED, owner);
+        assertThat(interest.getStatus()).isEqualTo(InterestStatus.ACCEPTED);
+        verify(interestRepository, times(2)).save(interest);
     }
 
     @Test
