@@ -10,6 +10,7 @@ import {MeusImoveis} from './pages/meus-imoveis/meus-imoveis';
 import {FavoritosComponent} from './pages/favoritos/favoritos.component';
 import {PropertyDetailPageComponent} from './pages/property-detail/property-detail-page.component';
 import {RecommendationsComponent} from './pages/recommendations/recommendations.component';
+import {HabitsComponent} from './pages/habits/habits.component';
 
 export const routes: Routes = [
   {
@@ -61,6 +62,12 @@ export const routes: Routes = [
     component: StudentProfileComponent,
     canActivate: [authGuard],
     title: 'Minha Instituição - Roomie'
+  },
+  {
+    path: 'habits',
+    component: HabitsComponent,
+    canActivate: [authGuard],
+    title: 'Meus Hábitos - Roomie'
   },
   {
     path: 'meus-imoveis',

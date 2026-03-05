@@ -83,6 +83,13 @@
             </button>
           </li>
 
+          <li *ngIf="user.role !== 'ADMIN'">
+            <button (click)="goToHabits()" class="dropdown-menu-item" role="menuitem">
+              <span aria-hidden="true" class="material-icons">psychology</span>
+              Meus Hábitos
+            </button>
+          </li>
+
           <hr aria-hidden="true" />
 
           <li>

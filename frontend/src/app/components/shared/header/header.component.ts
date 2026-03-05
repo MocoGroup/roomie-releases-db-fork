@@ -143,6 +143,11 @@ export class HeaderComponent {
     this.router.navigate(['/student-profile']);
   }
 
+  goToHabits(): void {
+    this.isMenuOpen = false;
+    this.router.navigate(['/habits']);
+  }
+
   onLogout(): void {
     this.isMenuOpen = false;
     this.auth.logout();
