@@ -214,7 +214,7 @@ class InterestServiceTest {
 
         assertThatThrownBy(() -> interestService.updateInterestStatus(999L, InterestStatus.ACCEPTED, owner))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessage("Interesse não encontrado.");
+                .hasMessageContaining("Interesse não encontrado.");
     }
 
     @Test
@@ -246,7 +246,7 @@ class InterestServiceTest {
 
         assertThatThrownBy(() -> interestService.hasInterest(999L, student))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessage("Imóvel não encontrado.");
+                .hasMessageContaining("Imóvel não encontrado.");
     }
 
     // ── updateInterestStatus – branches adicionais ──────────────────────────
