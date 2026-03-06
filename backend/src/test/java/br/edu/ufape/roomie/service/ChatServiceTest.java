@@ -151,7 +151,7 @@ class ChatServiceTest {
 
         assertThatThrownBy(() -> chatService.startChat(req, owner))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessage("Estudante não encontrado.");
+                .hasMessageContaining("Estudante não encontrado.");
     }
 
     @Test
@@ -166,7 +166,7 @@ class ChatServiceTest {
 
         assertThatThrownBy(() -> chatService.startChat(req, owner))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessage("Imóvel não encontrado.");
+                .hasMessageContaining("Imóvel não encontrado.");
     }
 
     // ── getChatsForUser ───
@@ -243,7 +243,7 @@ class ChatServiceTest {
 
         assertThatThrownBy(() -> chatService.getChatById(999L, owner))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessage("Chat não encontrado.");
+                .hasMessageContaining("Chat não encontrado.");
     }
 
     // ── getMessages ───

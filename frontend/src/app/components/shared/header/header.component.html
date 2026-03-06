@@ -29,18 +29,19 @@
         </div>
 
         <ul *ngIf="notifications.length > 0" class="notif-list">
-          <li
-            *ngFor="let notif of notifications"
-            class="notif-item"
-            [class.notif-unread]="!notif.read"
-            (click)="markAsRead(notif)"
-          >
-            <span class="material-icons notif-icon">{{ notif.read ? 'notifications_none' : 'notifications_active' }}</span>
-            <div class="notif-content">
-              <p class="notif-message">{{ notif.message }}</p>
-              <span class="notif-time">{{ notif.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
-            </div>
-            <span *ngIf="!notif.read" class="notif-dot"></span>
+          <li *ngFor="let notif of notifications">
+            <button
+              class="notif-item"
+              [class.notif-unread]="!notif.read"
+              (click)="markAsRead(notif)"
+            >
+              <span class="material-icons notif-icon">{{ notif.read ? 'notifications_none' : 'notifications_active' }}</span>
+              <div class="notif-content">
+                <p class="notif-message">{{ notif.message }}</p>
+                <span class="notif-time">{{ notif.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+              <span *ngIf="!notif.read" class="notif-dot"></span>
+            </button>
           </li>
         </ul>
       </div>
@@ -134,6 +135,13 @@
             <button (click)="goToHabits()" class="dropdown-menu-item" role="menuitem">
               <span aria-hidden="true" class="material-icons">psychology</span>
               Meus Hábitos
+            </button>
+          </li>
+
+          <li>
+            <button (click)="goToRelatorios()" class="dropdown-menu-item" role="menuitem">
+              <span aria-hidden="true" class="material-icons">bar_chart</span>
+              Relatórios
             </button>
           </li>
 

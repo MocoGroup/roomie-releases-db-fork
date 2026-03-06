@@ -198,6 +198,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.router.navigate(['/habits']);
   }
 
+  goToRelatorios(): void {
+    this.isMenuOpen = false;
+    this.router.navigate(['/relatorios']);
+  }
+
   onLogout(): void {
     this.isMenuOpen = false;
     this.auth.logout();

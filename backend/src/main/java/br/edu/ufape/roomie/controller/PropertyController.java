@@ -1,5 +1,25 @@
 package br.edu.ufape.roomie.controller;
 
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+
 import br.edu.ufape.roomie.dto.PropertyRequestDTO;
 import br.edu.ufape.roomie.dto.PropertyResponseDTO;
 import br.edu.ufape.roomie.enums.PropertyStatus;
@@ -10,15 +30,6 @@ import br.edu.ufape.roomie.projection.PropertyRankingView;
 import br.edu.ufape.roomie.repository.PropertyRepository;
 import br.edu.ufape.roomie.service.PropertyService;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
-import java.util.Map;
 
 
 @RestController
@@ -99,7 +110,7 @@ public class PropertyController {
     @PatchMapping("/{id}/publish")
     public ResponseEntity<?> publishProperty(@PathVariable Long id, Authentication authentication) {
         User user = (User) authentication.getPrincipal();
-        Property property = propertyRepository.findById(id).orElseThrow(() -> new RuntimeException("Imóvel não encontrado"));
+        Property property = propertyRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Imóvel não encontrado"));
 
         if (!property.getOwner().getId().equals(user.getId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Você não tem permissão para publicar este imóvel.");
@@ -116,22 +127,26 @@ public class PropertyController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProperty(@PathVariable Long id) {
+    public ResponseEntity<String> deleteProperty(@PathVariable Long id) {
         try {
             propertyService.deleteProperty(id);
             return ResponseEntity.noContent().build();
-        } catch (Exception e) {
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }
 
     @PatchMapping("/{id}/draft")
-    public ResponseEntity<?> setPropertyToDraft(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<Map<String, Long>> setPropertyToDraft(@PathVariable Long id, Authentication authentication) {
         try {
             Property property = propertyService.setPropertyToDraft(id);
-            return ResponseEntity.ok(Map.of("id", property.getId(), "status", "DRAFT"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+            return ResponseEntity.ok(Map.of("id", property.getId()));
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
 

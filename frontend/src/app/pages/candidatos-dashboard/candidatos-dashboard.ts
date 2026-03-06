@@ -177,7 +177,7 @@ export class CandidatosDashboardComponent implements OnInit {
         }
         this.cdr.detectChanges();
       },
-      error: (err: any) => {
+      error: (err: { message?: string }) => {
         this.toast.error(err?.message ?? 'Não foi possível atualizar o status do candidato.');
         this.cdr.detectChanges();
       }
@@ -220,7 +220,7 @@ export class CandidatosDashboardComponent implements OnInit {
 
   filterLabel(filter: StatusFilter): string {
     if (filter === 'ALL') return 'Todos';
-    return this.interestStatusLabel(filter as InterestStatus);
+    return this.interestStatusLabel(filter);
   }
 
   readonly filterOptions: StatusFilter[] = [

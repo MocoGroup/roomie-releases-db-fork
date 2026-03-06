@@ -190,6 +190,14 @@
         </p>
       </div>
 
+      <!-- ── Avaliações por estrelas ── -->
+      <app-star-rating
+        [summary]="evaluationSummary"
+        [hasEvaluated]="hasEvaluated"
+        [isStudent]="isStudent"
+        (submitEvaluation)="onSubmitEvaluation($event)">
+      </app-star-rating>
+
       <!-- ── Botão Demonstrar Interesse (somente para estudantes) ── -->
       <div class="interest-section" *ngIf="isStudent">
         <button class="btn-interest" (click)="demonstrarInteresse()" [disabled]="interesseEnviado">

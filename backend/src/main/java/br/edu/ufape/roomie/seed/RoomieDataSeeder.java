@@ -1,15 +1,5 @@
 package br.edu.ufape.roomie.seed;
 
-import br.edu.ufape.roomie.enums.*;
-import br.edu.ufape.roomie.model.*;
-import br.edu.ufape.roomie.repository.*;
-import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-import net.datafaker.Faker;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
-
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.LocalDate;
@@ -17,6 +7,45 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+
+import br.edu.ufape.roomie.enums.ContractStatus;
+import br.edu.ufape.roomie.enums.PropertyStatus;
+import br.edu.ufape.roomie.enums.PropertyType;
+import br.edu.ufape.roomie.enums.StudySchedule;
+import br.edu.ufape.roomie.enums.UserGender;
+import br.edu.ufape.roomie.enums.UserRole;
+import br.edu.ufape.roomie.model.Address;
+import br.edu.ufape.roomie.model.Chat;
+import br.edu.ufape.roomie.model.CleaningPrefs;
+import br.edu.ufape.roomie.model.Contract;
+import br.edu.ufape.roomie.model.Habit;
+import br.edu.ufape.roomie.model.Hobby;
+import br.edu.ufape.roomie.model.LifeStyle;
+import br.edu.ufape.roomie.model.Message;
+import br.edu.ufape.roomie.model.Property;
+import br.edu.ufape.roomie.model.PropertyEvaluation;
+import br.edu.ufape.roomie.model.PropertyPhoto;
+import br.edu.ufape.roomie.model.Student;
+import br.edu.ufape.roomie.model.User;
+import br.edu.ufape.roomie.repository.ChatRepository;
+import br.edu.ufape.roomie.repository.CleaningPrefsRepository;
+import br.edu.ufape.roomie.repository.ContractRepository;
+import br.edu.ufape.roomie.repository.HabitRepository;
+import br.edu.ufape.roomie.repository.HobbyRepository;
+import br.edu.ufape.roomie.repository.LifeStyleRepository;
+import br.edu.ufape.roomie.repository.MessageRepository;
+import br.edu.ufape.roomie.repository.PropertyEvaluationRepository;
+import br.edu.ufape.roomie.repository.PropertyPhotoRepository;
+import br.edu.ufape.roomie.repository.PropertyRepository;
+import br.edu.ufape.roomie.repository.StudentRepository;
+import br.edu.ufape.roomie.repository.UserRepository;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import net.datafaker.Faker;
 
 @Component
 @RequiredArgsConstructor
@@ -161,7 +190,6 @@ public class RoomieDataSeeder implements CommandLineRunner {
             evaluation.setProperty(savedProperties.get(random.nextInt(savedProperties.size())));
             evaluation.setStudent(savedStudents.get(random.nextInt(savedStudents.size())));
             evaluation.setRating(faker.number().numberBetween(1, 5));
-            evaluation.setComment(faker.lorem().sentence());
             evaluation.setTimestamp(LocalDateTime.now().minusDays(random.nextInt(365)));
             propertyEvaluationRepository.save(evaluation);
         }
