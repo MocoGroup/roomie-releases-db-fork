@@ -206,6 +206,8 @@
                                 <exclude>br/edu/ufape/roomie/service/TokenService.class</exclude>
                                 <exclude>br/edu/ufape/roomie/service/UserService.class</exclude>
                                 <exclude>br/edu/ufape/roomie/service/FileStorageService.class</exclude>
+                                <exclude>br/edu/ufape/roomie/controller/ContractController.class</exclude>
+                                <exclude>br/edu/ufape/roomie/service/ContractService.class</exclude>
                             </excludes>
                         </configuration>
                     </execution>
