@@ -28,7 +28,7 @@ jobs:
         working-directory: ./frontend
 
       - name: Run tests
-        run: npx jest --ci
+        run: npx jest --ci --coverage
         working-directory: ./frontend
 
       - name: Build Angular app

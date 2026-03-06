@@ -1,0 +1,161 @@
+<app-header></app-header>
+
+<!-- Page header — idêntico ao recommendations -->
+<div class="chat-page-header">
+  <button class="btn-back" (click)="goBack()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    Voltar
+  </button>
+  <h1 *ngIf="chat">
+    <span class="material-icons" aria-hidden="true">chat</span>
+    {{ otherPartyName() }}
+    <span class="header-property">— {{ chat.propertyTitle }}</span>
+  </h1>
+</div>
+
+<div class="chat-page">
+
+  <!-- Sidebar: info do contato -->
+  <div class="chat-sidebar">
+    <div class="chat-info-card" *ngIf="chat">
+      <div class="info-avatar">
+        <span class="material-icons">person</span>
+      </div>
+      <div class="info-details">
+        <span class="info-name">{{ otherPartyName() }}</span>
+        <span class="info-property">
+          <span class="material-icons tiny">home</span>
+          {{ chat.propertyTitle }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Estado do imóvel (atualizado pelo trigger) -->
+    <div class="property-status-card" *ngIf="property">
+      <div class="psc-row">
+        <span class="material-icons psc-icon">home</span>
+        <span class="psc-label">Situação do imóvel</span>
+        <span class="psc-badge"
+          [class.psc-active]="property.status === 'ACTIVE'"
+          [class.psc-rented]="property.status === 'RENTED'"
+          [class.psc-draft]="property.status === 'DRAFT'">
+          {{ property.status === 'ACTIVE' ? 'Ativo' : property.status === 'RENTED' ? 'Alugado' : 'Rascunho' }}
+        </span>
+      </div>
+      <div class="psc-row">
+        <span class="material-icons psc-icon">meeting_room</span>
+        <span class="psc-label">Vagas disponíveis</span>
+        <span class="psc-value">{{ property.availableVacancies }}</span>
+      </div>
+    </div>
+
+    <!-- Botão propor contrato (só proprietário) -->
+    <button class="btn-contract" *ngIf="isOwner()" (click)="showContractModal = true">
+      <span class="material-icons">description</span>
+      Propor Contrato
+    </button>
+
+    <!-- Contratos existentes -->
+    <div class="contracts-section" *ngIf="contracts.length > 0">
+      <h3 class="contracts-title">
+        <span class="material-icons">assignment</span>
+        Contratos
+      </h3>
+      <div class="contract-card" *ngFor="let c of contracts" [ngClass]="'status-' + c.status.toLowerCase()">
+        <div class="contract-status-badge">{{ statusLabel(c.status) }}</div>
+        <div class="contract-detail">
+          <span class="material-icons tiny">date_range</span>
+          {{ c.startDate | date:'dd/MM/yyyy' }} — {{ c.endDate | date:'dd/MM/yyyy' }}
+        </div>
+        <div class="contract-detail">
+          <span class="material-icons tiny">payments</span>
+          R$ {{ c.price | number:'1.2-2' }}
+        </div>
+        <!-- Aceitar/Recusar (apenas estudante, apenas PENDING) -->
+        <div class="contract-actions" *ngIf="!isOwner() && c.status === 'PENDING'">
+          <button class="btn-accept" (click)="acceptContract(c.id)" [disabled]="isProcessingContract">
+            <span class="material-icons">check_circle</span> Aceitar
+          </button>
+          <button class="btn-reject" (click)="rejectContract(c.id)" [disabled]="isProcessingContract">
+            <span class="material-icons">cancel</span> Recusar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main chat area -->
+  <div class="chat-main">
+
+    <!-- Loading -->
+    <div class="messages-loading" *ngIf="isLoading">
+      <span class="material-icons spinning">sync</span>
+      <p>Carregando mensagens...</p>
+    </div>
+
+    <!-- Messages -->
+    <div class="messages-container" #messagesContainer *ngIf="!isLoading">
+
+      <div class="messages-empty" *ngIf="messages.length === 0">
+        <span class="material-icons">chat_bubble_outline</span>
+        <p>Nenhuma mensagem ainda. Diga olá! 👋</p>
+      </div>
+
+      <div
+        *ngFor="let msg of messages"
+        class="message-wrapper"
+        [class.mine]="isMine(msg)"
+        [class.theirs]="!isMine(msg)">
+        <div class="bubble">
+          <p class="bubble-text">{{ msg.content }}</p>
+          <span class="bubble-time">
+            {{ msg.timestamp | date:'HH:mm' }}
+            <span class="material-icons read-icon" *ngIf="isMine(msg)">
+              {{ msg.read ? 'done_all' : 'done' }}
+            </span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="message-input-bar" *ngIf="!isLoading">
+      <button
+        class="btn-contract-inline"
+        *ngIf="isOwner()"
+        (click)="showContractModal = true"
+        aria-label="Propor contrato">
+        <span class="material-icons">description</span>
+      </button>
+      <textarea
+        class="message-input"
+        [(ngModel)]="newMessage"
+        (keydown)="onKeydown($event)"
+        placeholder="Digite uma mensagem... (Enter para enviar)"
+        rows="1"
+        [disabled]="isSending"
+        aria-label="Escrever mensagem">
+      </textarea>
+      <button
+        class="btn-send"
+        (click)="sendMessage()"
+        [disabled]="!newMessage.trim() || isSending"
+        aria-label="Enviar mensagem">
+        <span class="material-icons">{{ isSending ? 'hourglass_empty' : 'send' }}</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal do contrato -->
+<app-contract-form-modal
+  *ngIf="showContractModal"
+  [chatId]="chatId"
+  (closed)="showContractModal = false"
+  (contractSent)="loadContracts()">
+</app-contract-form-modal>
+

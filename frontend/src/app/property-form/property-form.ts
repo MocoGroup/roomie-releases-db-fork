@@ -6,6 +6,7 @@ import {PropertyType} from '../models/property-type.enum';
 import {PropertyService} from '../services/propertyService';
 import {HeaderComponent} from '../components/shared/header/header.component';
 import {environment} from '../../enviroments/enviroment';
+import {ToastService} from '../services/toast.service';
 
 @Component({
   selector: 'app-property-form',
@@ -35,6 +36,7 @@ export class PropertyFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly propertyService = inject(PropertyService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly toast = inject(ToastService);
 
   ngOnInit(): void {
     this.propertyForm = this.fb.group({
@@ -80,7 +82,7 @@ export class PropertyFormComponent implements OnInit {
           gender: property.generoMoradores,
           address: {
             street: property.rua,
-            number: property.numEndereco?.toString(),
+            number: property.numEndereco,
             district: property.bairro,
             city: property.cidade,
             state: property.estado,
@@ -91,6 +93,7 @@ export class PropertyFormComponent implements OnInit {
       },
       error: (err) => {
         console.error('Erro ao carregar imóvel:', err);
+        this.toast.error('Erro ao carregar dados do imóvel.');
       }
     });
 
@@ -161,6 +164,7 @@ export class PropertyFormComponent implements OnInit {
             this.submitSuccess = true;
             this.submitError = '';
             this.isSubmitting = false;
+            this.toast.success('Imóvel atualizado com sucesso!');
             setTimeout(() => this.router.navigate(['/meus-imoveis']), 1500);
           },
           error: (err) => {
@@ -168,6 +172,7 @@ export class PropertyFormComponent implements OnInit {
             this.submitError = 'Erro ao atualizar o imóvel. Tente novamente mais tarde.';
             this.submitSuccess = false;
             this.isSubmitting = false;
+            this.toast.error(this.submitError);
           }
         });
       } else {
@@ -176,13 +181,15 @@ export class PropertyFormComponent implements OnInit {
             this.submitSuccess = true;
             this.submitError = '';
             this.isSubmitting = false;
-            setTimeout(() => this.router.navigate(['/home'], {queryParams: {from: 'create'}}), 1500);
+            this.toast.success('Imóvel cadastrado com sucesso!');
+            setTimeout(() => this.router.navigate(['/meus-imoveis']), 1500);
           },
           error: (err) => {
             console.error('Erro ao salvar imóvel:', err);
             this.submitError = 'Erro ao cadastrar o imóvel. Tente novamente mais tarde.';
             this.submitSuccess = false;
             this.isSubmitting = false;
+            this.toast.error(this.submitError);
           }
         });
       }

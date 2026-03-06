@@ -5,11 +5,17 @@ import {
   HostListener,
   inject,
   Input,
+  OnDestroy,
+  OnInit,
   Output,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Auth } from '../../../auth/auth';
+import { NotificationService } from '../../../services/notification.service';
+import { AppNotification } from '../../../models/notification.model';
+import { Subscription, interval } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-header',
@@ -18,34 +24,80 @@ import { Auth } from '../../../auth/auth';
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.css'],
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit, OnDestroy {
   /** Exibe o botão "Cadastrar Imóvel" ao lado do avatar */
   @Input() showCreateProperty = true;
 
   @Output() logoClicked = new EventEmitter<void>();
   isMenuOpen = false;
+  isNotifOpen = false;
+  notifications: AppNotification[] = [];
+
   private readonly auth = inject(Auth);
-  user$ = this.auth.currentUser$;
+  private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly elRef = inject(ElementRef);
+  private pollSub?: Subscription;
+
+  user$ = this.auth.currentUser$;
+
+  get unreadCount(): number {
+    return this.notifications.filter(n => !n.read).length;
+  }
+
+  ngOnInit(): void {
+    this.loadNotifications();
+    // Polling a cada 30 segundos
+    this.pollSub = interval(30000).pipe(
+      switchMap(() => this.notificationService.getNotifications())
+    ).subscribe(notifications => {
+      this.notifications = notifications;
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.pollSub?.unsubscribe();
+  }
+
+  loadNotifications(): void {
+    this.notificationService.getNotifications().subscribe({
+      next: notifications => (this.notifications = notifications),
+      error: () => {}
+    });
+  }
+
+  toggleNotif(): void {
+    this.isNotifOpen = !this.isNotifOpen;
+    this.isMenuOpen = false;
+  }
+
+  markAllAsRead(): void {
+    this.notificationService.markAllAsRead().subscribe(() => {
+      this.notifications = this.notifications.map(n => ({ ...n, read: true }));
+    });
+  }
+
+  markAsRead(notif: AppNotification): void {
+    if (notif.read) return;
+    this.notificationService.markAsRead(notif.id).subscribe(() => {
+      notif.read = true;
+    });
+  }
 
   /** Fecha o menu ao clicar fora do componente */
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     if (!this.elRef.nativeElement.contains(event.target)) {
       this.isMenuOpen = false;
+      this.isNotifOpen = false;
     }
   }
 
   toggleMenu(): void {
     this.isMenuOpen = !this.isMenuOpen;
+    this.isNotifOpen = false;
   }
 
-  /**
-   * Keyboard handler on the toggle button:
-   * Enter/Space → toggle, Escape → close,
-   * ArrowDown → open and focus first item.
-   */
   onButtonKeydown(event: KeyboardEvent): void {
     switch (event.key) {
       case 'Enter':
@@ -65,10 +117,6 @@ export class HeaderComponent {
     }
   }
 
-  /**
-   * Keyboard handler inside the dropdown:
-   * ArrowDown/ArrowUp → navigate items, Escape → close and return focus to button.
-   */
   onMenuKeydown(event: KeyboardEvent): void {
     const items = this.getMenuItems();
     const current = document.activeElement as HTMLElement;
@@ -95,9 +143,6 @@ export class HeaderComponent {
     }
   }
 
-  /**
-   * Handles empty / whitespace-only names gracefully.
-   */
   getInitials(name: string): string {
     if (!name?.trim()) return 'U';
     const names = name.trim().split(' ');
@@ -128,9 +173,29 @@ export class HeaderComponent {
     this.router.navigate(['/meus-imoveis']);
   }
 
+  goToChats(): void {
+    this.isMenuOpen = false;
+    this.router.navigate(['/chats']);
+  }
+
+  goToFavorites(): void {
+    this.isMenuOpen = false;
+    this.router.navigate(['/favoritos']);
+  }
+
+  goToRecommendations(): void {
+    this.isMenuOpen = false;
+    this.router.navigate(['/recommendations']);
+  }
+
   goToStudentProfile(): void {
     this.isMenuOpen = false;
     this.router.navigate(['/student-profile']);
+  }
+
+  goToHabits(): void {
+    this.isMenuOpen = false;
+    this.router.navigate(['/habits']);
   }
 
   onLogout(): void {

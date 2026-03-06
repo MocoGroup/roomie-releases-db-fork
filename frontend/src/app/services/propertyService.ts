@@ -1,8 +1,10 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {Observable} from 'rxjs';
+import {map} from 'rxjs/operators';
 import {Property} from '../models/property';
 import {PropertyDetailView} from '../models/property-detail-view';
+import {PropertyRankingView} from '../models/property-ranking-view';
 import {environment} from '../../enviroments/enviroment';
 
 
@@ -11,6 +13,7 @@ import {environment} from '../../enviroments/enviroment';
 })
 export class PropertyService {
   private readonly apiUrl = `${environment.apiUrl}/api/properties`;
+  private readonly announcementsUrl = `${environment.apiUrl}/announcements`;
 
   constructor(private readonly http: HttpClient) {
   }
@@ -19,8 +22,8 @@ export class PropertyService {
     return this.http.get<Property[]>(this.apiUrl);
   }
 
-  createProperty(propertyData: any): Observable<any> {
-    return this.http.post(this.apiUrl, propertyData, {responseType: 'text' as 'json'});
+  createProperty(propertyData: any): Observable<{ id: number }> {
+    return this.http.post<{ id: number }>(this.apiUrl, propertyData);
   }
 
   getMyProperties(): Observable<PropertyDetailView[]> {
@@ -53,6 +56,19 @@ export class PropertyService {
 
   getDetailById(id: number): Observable<PropertyDetailView> {
     return this.http.get<PropertyDetailView>(`${this.apiUrl}/${id}/details`);
+  }
+
+  expressInterest(propertyId: number): Observable<string> {
+    return this.http.post(`${this.announcementsUrl}/${propertyId}/interest`, {}, {responseType: 'text'});
+  }
+
+  checkInterest(propertyId: number): Observable<boolean> {
+    return this.http.get<{hasInterest: boolean}>(`${this.announcementsUrl}/${propertyId}/interest/check`)
+      .pipe(map(res => res.hasInterest));
+  }
+
+  getRanking(): Observable<PropertyRankingView[]> {
+    return this.http.get<PropertyRankingView[]>(`${this.apiUrl}/ranking`);
   }
 
 }

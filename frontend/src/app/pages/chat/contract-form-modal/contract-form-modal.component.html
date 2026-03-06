@@ -1,0 +1,39 @@
+<div class="modal-overlay" (click)="close()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <span class="material-icons">description</span>
+      <h2>Proposta de Contrato</h2>
+      <button class="btn-close" (click)="close()" aria-label="Fechar">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="startDate">Data de Início</label>
+        <input id="startDate" type="date" [(ngModel)]="startDate" [disabled]="isSending" />
+      </div>
+
+      <div class="form-group">
+        <label for="endDate">Data de Término</label>
+        <input id="endDate" type="date" [(ngModel)]="endDate" [disabled]="isSending" />
+      </div>
+
+      <div class="form-group">
+        <label for="price">Valor do Aluguel (R$)</label>
+        <input id="price" type="number" min="0" step="0.01" [(ngModel)]="price" [disabled]="isSending"
+          placeholder="Ex: 850.00" />
+      </div>
+
+      <p class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="close()" [disabled]="isSending">Cancelar</button>
+      <button class="btn-send" (click)="send()" [disabled]="isSending">
+        <span class="material-icons">{{ isSending ? 'hourglass_empty' : 'send' }}</span>
+        {{ isSending ? 'Enviando...' : 'Enviar Proposta' }}
+      </button>
+    </div>
+  </div>
+</div>

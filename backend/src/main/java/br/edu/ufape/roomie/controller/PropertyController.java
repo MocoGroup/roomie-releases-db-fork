@@ -1,10 +1,12 @@
 package br.edu.ufape.roomie.controller;
 
 import br.edu.ufape.roomie.dto.PropertyRequestDTO;
+import br.edu.ufape.roomie.dto.PropertyResponseDTO;
 import br.edu.ufape.roomie.enums.PropertyStatus;
 import br.edu.ufape.roomie.model.Property;
 import br.edu.ufape.roomie.model.User;
 import br.edu.ufape.roomie.projection.PropertyDetailView;
+import br.edu.ufape.roomie.projection.PropertyRankingView;
 import br.edu.ufape.roomie.repository.PropertyRepository;
 import br.edu.ufape.roomie.service.PropertyService;
 import jakarta.validation.Valid;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 
 @RestController
@@ -31,12 +34,12 @@ public class PropertyController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Property> store(
+    public ResponseEntity<Map<String, Long>> store(
             @Valid @RequestPart("data") PropertyRequestDTO dto,
             @RequestPart(value = "photos", required = false) List<MultipartFile> photos
     ) {
         Property createdProperty = propertyService.createProperty(dto, photos);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdProperty);
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("id", createdProperty.getId()));
     }
 
     @GetMapping
@@ -76,11 +79,21 @@ public class PropertyController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/ranking")
+    public ResponseEntity<List<PropertyRankingView>> getRanking() {
+        return ResponseEntity.ok(propertyRepository.findAllRanking());
+    }
+
     @GetMapping("/meus")
     public ResponseEntity<List<PropertyDetailView>> getMyproperties(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         List<PropertyDetailView> properties = propertyRepository.findMyDetails(user.getEmail());
         return ResponseEntity.ok(properties);
+    }
+
+    @GetMapping("/announcements/{id}")
+    public ResponseEntity<PropertyResponseDTO> getDetails(@PathVariable Long id) {
+        return ResponseEntity.ok(propertyService.getPropertyDetails(id));
     }
 
     @PatchMapping("/{id}/publish")
@@ -93,14 +106,13 @@ public class PropertyController {
         }
 
         if (property.getStatus() == PropertyStatus.ACTIVE) {
-            return ResponseEntity.badRequest()
-                    .body("Imóvel já está publicado.");
+            return ResponseEntity.badRequest().body("Imóvel já está publicado.");
         }
 
         property.setStatus(PropertyStatus.ACTIVE);
         propertyRepository.save(property);
 
-        return ResponseEntity.ok(property);
+        return ResponseEntity.ok(Map.of("id", property.getId(), "status", "ACTIVE"));
     }
 
     @DeleteMapping("/{id}")
@@ -117,20 +129,20 @@ public class PropertyController {
     public ResponseEntity<?> setPropertyToDraft(@PathVariable Long id, Authentication authentication) {
         try {
             Property property = propertyService.setPropertyToDraft(id);
-            return ResponseEntity.ok(property);
+            return ResponseEntity.ok(Map.of("id", property.getId(), "status", "DRAFT"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         }
     }
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Property> updateProperty(
+    public ResponseEntity<Map<String, Long>> updateProperty(
             @PathVariable Long id,
             @Valid @RequestPart("data") PropertyRequestDTO dto,
             @RequestPart(value = "photos", required = false) List<MultipartFile> photos
     ) {
         Property updated = propertyService.updateProperty(id, dto, photos);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(Map.of("id", updated.getId()));
     }
 
 }

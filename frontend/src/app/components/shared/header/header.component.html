@@ -1,10 +1,50 @@
 <header class="topbar-blue">
-  <button (click)="onLogoClick()" class="logo-text" title="Início">Roomie</button>
+  <button (click)="onLogoClick()" class="logo-text" title="Início">
+    <img src="/negativo_h.svg" alt="Logo do Roomie" class="logo-img">
+  </button>
 
   <div class="header-buttons">
     <button (click)="goToCreateProperty()" *ngIf="showCreateProperty" class="outline-btn">
       + Cadastrar Imóvel
     </button>
+
+    <!-- Sino de notificações -->
+    <div *ngIf="user$ | async" class="notif-wrapper">
+      <button (click)="toggleNotif()" class="notif-btn" aria-label="Notificações">
+        <span class="material-icons">notifications</span>
+        <span *ngIf="unreadCount > 0" class="notif-badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+      </button>
+
+      <div *ngIf="isNotifOpen" class="notif-dropdown">
+        <div class="notif-header">
+          <span>Notificações</span>
+          <button *ngIf="unreadCount > 0" (click)="markAllAsRead()" class="mark-all-btn">
+            Marcar todas como lidas
+          </button>
+        </div>
+
+        <div *ngIf="notifications.length === 0" class="notif-empty">
+          <span class="material-icons">notifications_none</span>
+          <p>Nenhuma notificação</p>
+        </div>
+
+        <ul *ngIf="notifications.length > 0" class="notif-list">
+          <li
+            *ngFor="let notif of notifications"
+            class="notif-item"
+            [class.notif-unread]="!notif.read"
+            (click)="markAsRead(notif)"
+          >
+            <span class="material-icons notif-icon">{{ notif.read ? 'notifications_none' : 'notifications_active' }}</span>
+            <div class="notif-content">
+              <p class="notif-message">{{ notif.message }}</p>
+              <span class="notif-time">{{ notif.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <span *ngIf="!notif.read" class="notif-dot"></span>
+          </li>
+        </ul>
+      </div>
+    </div>
 
     <div *ngIf="user$ | async as user" class="user-menu-wrapper">
       <button
@@ -48,9 +88,16 @@
           </li>
 
           <li>
-            <button class="dropdown-menu-item" role="menuitem">
+            <button (click)="goToFavorites()" class="dropdown-menu-item" role="menuitem">
               <span aria-hidden="true" class="material-icons">favorite_border</span>
               Favoritos
+            </button>
+          </li>
+
+          <li>
+            <button (click)="goToRecommendations()" class="dropdown-menu-item" role="menuitem">
+              <span aria-hidden="true" class="material-icons">people</span>
+              Recomendações
             </button>
           </li>
 
@@ -68,11 +115,25 @@
             </button>
           </li>
 
+          <li>
+            <button (click)="goToChats()" class="dropdown-menu-item" role="menuitem">
+              <span aria-hidden="true" class="material-icons">chat</span>
+              Conversas
+            </button>
+          </li>
+
           <!-- Visível apenas para não-administradores -->
           <li *ngIf="user.role !== 'ADMIN'">
             <button (click)="goToStudentProfile()" class="dropdown-menu-item" role="menuitem">
               <span aria-hidden="true" class="material-icons">school</span>
               Minha Instituição
+            </button>
+          </li>
+
+          <li *ngIf="user.role !== 'ADMIN'">
+            <button (click)="goToHabits()" class="dropdown-menu-item" role="menuitem">
+              <span aria-hidden="true" class="material-icons">psychology</span>
+              Meus Hábitos
             </button>
           </li>
 
