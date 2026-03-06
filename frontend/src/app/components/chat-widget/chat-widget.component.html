@@ -6,8 +6,8 @@
   </span>
 </button>
 
-<!-- Chat popup panel — só aparece autenticado -->
-<div class="widget-panel" *ngIf="isAuthenticated && state !== 'closed'">
+<!-- Chat popup panel — só aparece autenticado e fora da página de chats -->
+<div class="widget-panel" *ngIf="isAuthenticated && state !== 'closed' && !isOnChatPage">
 
   <!-- ── LIST VIEW ── -->
   <ng-container *ngIf="state === 'list'">
@@ -45,6 +45,13 @@
         <span class="row-badge" *ngIf="chat.unreadCount > 0">{{ chat.unreadCount }}</span>
         <span class="material-icons row-chevron">chevron_right</span>
       </div>
+    </div>
+
+    <div class="panel-footer">
+      <button class="btn-open-page" (click)="navigateToChats()">
+        <span class="material-icons">open_in_new</span>
+        Abrir página de mensagens
+      </button>
     </div>
   </ng-container>
 

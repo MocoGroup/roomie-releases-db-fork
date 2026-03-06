@@ -37,6 +37,10 @@ public class Contract {
     @JoinColumn(name = "id_proprietario", nullable = false)
     private User owner;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_chat")
+    private Chat chat;
+
     @Column(name = "data_inicio", nullable = false)
     private LocalDate startDate;
 

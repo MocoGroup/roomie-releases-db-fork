@@ -13,17 +13,20 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { interval, Subscription } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { ChatService } from '../../../services/chat.service';
+import { ContractService } from '../../../services/contract.service';
 import { Auth } from '../../../auth/auth';
 import { Chat } from '../../../models/chat.model';
 import { Message } from '../../../models/message.model';
+import { ContractResponse } from '../../../models/contract.model';
 import { HeaderComponent } from '../../../components/shared/header/header.component';
+import { ContractFormModalComponent } from '../contract-form-modal/contract-form-modal.component';
 import { ToastService } from '../../../services/toast.service';
 import { take } from 'rxjs';
 
 @Component({
   selector: 'app-chat-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent, ContractFormModalComponent],
   templateUrl: './chat-detail.component.html',
   styleUrl: './chat-detail.component.css'
 })
@@ -32,9 +35,12 @@ export class ChatDetailComponent implements OnInit, OnDestroy, AfterViewChecked 
 
   chat: Chat | null = null;
   messages: Message[] = [];
+  contracts: ContractResponse[] = [];
   newMessage = '';
   isSending = false;
   isLoading = true;
+  isProcessingContract = false;
+  showContractModal = false;
   currentUserId: number | null = null;
   chatId!: number;
 
@@ -43,6 +49,7 @@ export class ChatDetailComponent implements OnInit, OnDestroy, AfterViewChecked 
 
   constructor(
     private readonly chatService: ChatService,
+    private readonly contractService: ContractService,
     private readonly auth: Auth,
     private readonly route: ActivatedRoute,
     private readonly router: Router,
@@ -75,6 +82,7 @@ export class ChatDetailComponent implements OnInit, OnDestroy, AfterViewChecked 
       next: (chat) => {
         this.chat = chat;
         this.loadMessages();
+        this.loadContracts();
         this.startPolling();
       },
       error: (err) => {
@@ -154,6 +162,62 @@ export class ChatDetailComponent implements OnInit, OnDestroy, AfterViewChecked 
     return this.currentUserId === this.chat.ownerId
       ? this.chat.studentName
       : this.chat.ownerName;
+  }
+
+  isOwner(): boolean {
+    return !!this.chat && this.currentUserId === this.chat.ownerId;
+  }
+
+  loadContracts(): void {
+    this.contractService.getContractsByChat(this.chatId).subscribe({
+      next: (contracts) => {
+        this.contracts = contracts;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Erro ao carregar contratos', err)
+    });
+  }
+
+  acceptContract(contractId: number): void {
+    this.isProcessingContract = true;
+    this.contractService.acceptContract(contractId).subscribe({
+      next: () => {
+        this.toast.success('Contrato aceito com sucesso!');
+        this.isProcessingContract = false;
+        this.loadContracts();
+      },
+      error: (err) => {
+        console.error('Erro ao aceitar contrato', err);
+        this.toast.error('Erro ao aceitar contrato.');
+        this.isProcessingContract = false;
+      }
+    });
+  }
+
+  rejectContract(contractId: number): void {
+    this.isProcessingContract = true;
+    this.contractService.rejectContract(contractId).subscribe({
+      next: () => {
+        this.toast.success('Contrato recusado.');
+        this.isProcessingContract = false;
+        this.loadContracts();
+      },
+      error: (err) => {
+        console.error('Erro ao recusar contrato', err);
+        this.toast.error('Erro ao recusar contrato.');
+        this.isProcessingContract = false;
+      }
+    });
+  }
+
+  statusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      PENDING: 'Pendente',
+      ACTIVE: 'Ativo',
+      FINISHED: 'Finalizado',
+      CANCELLED: 'Cancelado'
+    };
+    return labels[status] ?? status;
   }
 
   private scrollToBottom(): void {

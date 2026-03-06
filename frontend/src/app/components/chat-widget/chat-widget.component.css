@@ -342,4 +342,38 @@
   .fab { bottom: 20px; right: 20px; }
 }
 
+/* ── Footer: open messages page ── */
+.panel-footer {
+  border-top: 1px solid #e8eaf0;
+  padding: 10px 16px;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.btn-open-page {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #e3f2fd;
+  color: #1565c0;
+  font-family: 'Raleway', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-open-page:hover {
+  background: #bbdefb;
+}
+
+.btn-open-page .material-icons {
+  font-size: 1.1rem;
+}
+
 

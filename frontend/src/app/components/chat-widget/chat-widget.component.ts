@@ -4,13 +4,14 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, NavigationEnd } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { filter, take } from 'rxjs';
 import { ChatService } from '../../services/chat.service';
 import { ChatWidgetService, WidgetState } from '../../services/chat-widget.service';
 import { Auth } from '../../auth/auth';
 import { Chat } from '../../models/chat.model';
 import { Message } from '../../models/message.model';
-import { take } from 'rxjs';
 
 @Component({
   selector: 'app-chat-widget',
@@ -32,6 +33,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
   isLoadingMessages = false;
   currentUserId: number | null = null;
   isAuthenticated = false;
+  isOnChatPage = false;
 
   private subs = new Subscription();
   private pollInterval: ReturnType<typeof setInterval> | null = null;
@@ -43,19 +45,34 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
     return this.chats.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0);
   }
 
-  /** FAB só aparece quando autenticado e há pelo menos 1 chat */
+  /** FAB só aparece quando autenticado, há pelo menos 1 chat e NÃO está na página de mensagens */
   get showFab(): boolean {
-    return this.isAuthenticated && this.chats.length > 0;
+    return this.isAuthenticated && this.chats.length > 0 && !this.isOnChatPage;
   }
 
   constructor(
     private readonly chatService: ChatService,
     private readonly widgetService: ChatWidgetService,
     private readonly auth: Auth,
+    private readonly router: Router,
     private readonly cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
+    // Detecta se está na página de chats para esconder o widget
+    this.isOnChatPage = this.router.url.startsWith('/chats');
+    this.subs.add(
+      this.router.events.pipe(
+        filter((e): e is NavigationEnd => e instanceof NavigationEnd)
+      ).subscribe(e => {
+        this.isOnChatPage = e.urlAfterRedirects.startsWith('/chats');
+        if (this.isOnChatPage) {
+          this.widgetService.close();
+        }
+        this.cdr.detectChanges();
+      })
+    );
+
     // Acompanha autenticação — mostra/oculta widget dinamicamente
     this.subs.add(
       this.auth.currentUser$.subscribe(user => {
@@ -230,6 +247,11 @@ export class ChatWidgetComponent implements OnInit, OnDestroy, AfterViewChecked 
   toggle(): void   { this.widgetService.toggle(); }
   backToList(): void { this.stopPolling(); this.widgetService.backToList(); }
   close(): void    { this.stopPolling(); this.widgetService.close(); }
+
+  navigateToChats(): void {
+    this.close();
+    this.router.navigate(['/chats']);
+  }
 
   private scrollToBottom(): void {
     try { const el = this.msgContainer?.nativeElement; if (el) el.scrollTop = el.scrollHeight; }

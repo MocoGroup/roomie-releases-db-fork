@@ -32,6 +32,40 @@
         </span>
       </div>
     </div>
+
+    <!-- Botão propor contrato (só proprietário) -->
+    <button class="btn-contract" *ngIf="isOwner()" (click)="showContractModal = true">
+      <span class="material-icons">description</span>
+      Propor Contrato
+    </button>
+
+    <!-- Contratos existentes -->
+    <div class="contracts-section" *ngIf="contracts.length > 0">
+      <h3 class="contracts-title">
+        <span class="material-icons">assignment</span>
+        Contratos
+      </h3>
+      <div class="contract-card" *ngFor="let c of contracts" [ngClass]="'status-' + c.status.toLowerCase()">
+        <div class="contract-status-badge">{{ statusLabel(c.status) }}</div>
+        <div class="contract-detail">
+          <span class="material-icons tiny">date_range</span>
+          {{ c.startDate | date:'dd/MM/yyyy' }} — {{ c.endDate | date:'dd/MM/yyyy' }}
+        </div>
+        <div class="contract-detail">
+          <span class="material-icons tiny">payments</span>
+          R$ {{ c.price | number:'1.2-2' }}
+        </div>
+        <!-- Aceitar/Recusar (apenas estudante, apenas PENDING) -->
+        <div class="contract-actions" *ngIf="!isOwner() && c.status === 'PENDING'">
+          <button class="btn-accept" (click)="acceptContract(c.id)" [disabled]="isProcessingContract">
+            <span class="material-icons">check_circle</span> Aceitar
+          </button>
+          <button class="btn-reject" (click)="rejectContract(c.id)" [disabled]="isProcessingContract">
+            <span class="material-icons">cancel</span> Recusar
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Main chat area -->
@@ -70,6 +104,13 @@
 
     <!-- Input -->
     <div class="message-input-bar" *ngIf="!isLoading">
+      <button
+        class="btn-contract-inline"
+        *ngIf="isOwner()"
+        (click)="showContractModal = true"
+        aria-label="Propor contrato">
+        <span class="material-icons">description</span>
+      </button>
       <textarea
         class="message-input"
         [(ngModel)]="newMessage"
@@ -90,4 +131,12 @@
 
   </div>
 </div>
+
+<!-- Modal do contrato -->
+<app-contract-form-modal
+  *ngIf="showContractModal"
+  [chatId]="chatId"
+  (closed)="showContractModal = false"
+  (contractSent)="loadContracts()">
+</app-contract-form-modal>
 
