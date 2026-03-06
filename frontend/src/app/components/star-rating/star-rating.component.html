@@ -1,0 +1,73 @@
+<div class="rating-section">
+  <h2>
+    <span class="material-icons section-icon">star</span>
+    Avaliações
+  </h2>
+
+  <!-- Resumo -->
+  <div class="rating-summary" *ngIf="summary && summary.totalEvaluations > 0">
+    <div class="average-block">
+      <span class="average-number">{{ summary.averageRating | number: '1.1-1' }}</span>
+      <div class="average-stars">
+        <span
+          *ngFor="let s of stars"
+          class="star-display"
+          [ngClass]="getStarClass(s, summary.averageRating)">
+          ★
+        </span>
+      </div>
+      <span class="total-reviews">{{ summary.totalEvaluations }} avaliação{{ summary.totalEvaluations !== 1 ? 'ões' : '' }}</span>
+    </div>
+  </div>
+
+  <div class="rating-summary" *ngIf="!summary || summary.totalEvaluations === 0">
+    <p class="no-reviews">Nenhuma avaliação ainda.</p>
+  </div>
+
+  <!-- Formulário de avaliação (apenas estrelas) -->
+  <div class="rating-form-area" *ngIf="isStudent && !hasEvaluated">
+    <div class="rate-prompt">
+      <span class="rate-label">Avalie este imóvel:</span>
+      <div class="interactive-stars">
+        <button
+          *ngFor="let s of stars"
+          type="button"
+          class="star-btn"
+          [class.active]="s <= (hoverRating || selectedRating)"
+          (mouseenter)="onStarHover(s)"
+          (mouseleave)="onStarLeave()"
+          (click)="onStarClick(s)"
+          [attr.aria-label]="s + ' estrela' + (s > 1 ? 's' : '')">
+          ★
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="already-evaluated" *ngIf="hasEvaluated">
+    <span class="material-icons check-icon">check_circle</span>
+    Você avaliou este imóvel.
+  </div>
+
+  <!-- Lista de avaliações -->
+  <div class="evaluations-list" *ngIf="summary && summary.evaluations.length > 0">
+    <div class="evaluation-card" *ngFor="let eval of summary.evaluations">
+      <div class="eval-header">
+        <div class="eval-avatar">{{ getInitials(eval.studentName) }}</div>
+        <div class="eval-info">
+          <span class="eval-name">{{ eval.studentName }}</span>
+          <span class="eval-date">{{ formatDate(eval.timestamp) }}</span>
+        </div>
+        <div class="eval-stars">
+          <span
+            *ngFor="let s of stars"
+            class="star-display small"
+            [ngClass]="getStarClass(s, eval.rating)">
+            ★
+          </span>
+        </div>
+      </div>
+      <p class="eval-comment" *ngIf="eval.comment">{{ eval.comment }}</p>
+    </div>
+  </div>
+</div>
