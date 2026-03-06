@@ -24,9 +24,6 @@ comunidades e garantindo melhores condições de moradia durante a vida acadêmi
 - [José Gustavo Andrade da Silva](https://github.com/Gustavo7a)
 - [Jurandir Tenório Vaz Neto](https://github.com/Jurandirtvaz)
 - [Guilherme Henrique Barbosa de Souza Lima](https://github.com/Castlus)
-- [Lucas Henrique de Andrade Silva](https://github.com/Lucasenrique-s)
-- [Luigi Mateo e Silva](https://github.com/memelon220)
-- [Pablo Roldão Pereira Santos](https://github.com/pablo-roldao)
 
 ## Objetivos
 
@@ -156,7 +153,7 @@ erDiagram
         user_role cargo
     }
     estudante {
-        int id_estudante PK_FK
+        int id_estudante PK, FK
         varchar curso
         varchar instituicao
     }
@@ -218,10 +215,25 @@ erDiagram
         int id_imovel FK
         int id_estudante FK
         int id_proprietario FK
+        int id_chat FK
         date data_inicio
         date data_fim
         decimal valor_aluguel
         status_contrato status_contrato
+    }
+    interesse {
+        serial id_interesse PK
+        int id_estudante FK
+        int id_imovel FK
+        timestamp data_interesse
+        status_interesse status
+    }
+    notificacao {
+        serial id_notificacao PK
+        int id_destinatario FK
+        varchar mensagem
+        boolean lida
+        timestamp criada_em
     }
     avaliacao_imovel {
         serial id_avaliacao PK
@@ -259,6 +271,7 @@ erDiagram
     imovel ||--o{ contrato_locacao : "firmado em"
     estudante ||--o{ contrato_locacao : "assina"
     usuario ||--o{ contrato_locacao : "assina como proprietário"
+    chat ||--o{ contrato_locacao : "origina"
     imovel ||--o{ avaliacao_imovel : "recebe"
     estudante ||--o{ avaliacao_imovel : "faz"
     estudante ||--o{ chat : "participa"
@@ -266,6 +279,9 @@ erDiagram
     imovel ||--o{ chat : "tema de"
     chat ||--o{ mensagem : "contém"
     usuario ||--o{ mensagem : "envia"
+    estudante ||--o{ interesse : "demonstra"
+    imovel ||--o{ interesse : "recebe"
+    usuario ||--o{ notificacao : "recebe"
 ```
 
 ---
@@ -327,10 +343,12 @@ O dicionário de dados completo e atualizado está disponível no README do mód
 | `imovel` | Imóveis cadastrados para locação |
 | `endereco` | Endereço completo do imóvel (1:1 com imóvel) |
 | `imagem_imovel` | Fotos do imóvel (1 imóvel → N imagens) |
-| `contrato_locacao` | Contratos de locação entre estudantes e proprietários |
+| `interesse` | Registra o interesse de um estudante em um imóvel, com status de acompanhamento (PENDING, ACCEPTED, REJECTED) |
+| `contrato_locacao` | Contratos de locação entre estudantes e proprietários, vinculado ao chat que o originou |
 | `avaliacao_imovel` | Avaliações e notas de estudantes sobre imóveis |
 | `chat` | Conversas entre estudantes e proprietários sobre imóveis |
 | `mensagem` | Mensagens individuais trocadas em cada chat |
+| `notificacao` | Notificações enviadas ao usuário pelo sistema (ex.: contrato aceito, mensagem recebida) |
 
 ### ENUMs Utilizados
 
@@ -338,7 +356,8 @@ O dicionário de dados completo e atualizado está disponível no README do mód
 |:-----|:--------|:----|
 | `tipo_genero` | `MALE`, `FEMALE`, `OTHER`, `MIXED` | Gênero de usuários e moradores aceitos |
 | `horarios` | `MORNING`, `AFTERNOON`, `EVENING`, `DAWN` | Horário de estudo do estudante |
-| `status_contrato` | `ACTIVE`, `FINISHED`, `CANCELLED` | Status de contrato de locação |
+| `status_contrato` | `PENDING`, `ACTIVE`, `FINISHED`, `CANCELLED` | Status de contrato de locação |
+| `status_interesse` | `PENDING`, `ACCEPTED`, `REJECTED` | Status do interesse de um estudante em um imóvel |
 | `user_role` | `ADMIN`, `USER` | Permissão do usuário no sistema |
 | `tipo_imovel` | `HOUSE`, `APARTMENT`, `STUDIO`, `ROOM`, `DORMITORY` | Categoria do imóvel |
 | `status_anuncio` | `DRAFT`, `ACTIVE`, `RENTED` | Estado do anúncio do imóvel |
@@ -384,6 +403,141 @@ docker-compose up --build
 ```
 
 > O parâmetro `-v` remove o volume de dados persistido, garantindo que o banco seja recriado com o schema mais recente e os dados re-gerados pelo seeder.
+
+---
+
+## Documentação do Trigger
+
+### `trg_atualizar_vagas_contrato`
+
+#### Regra de Negócio Automatizada
+
+O trigger mantém o campo `vagas_disponiveis` da tabela `imovel` sempre sincronizado com o ciclo de vida dos contratos de locação, sem que a aplicação precise calcular isso manualmente.
+
+Ele cobre três momentos do `status_contrato`:
+
+| Transição de status | O que acontece no imóvel |
+|:--------------------|:------------------------|
+| qualquer → `ACTIVE` | `vagas_disponiveis - 1`. Se zerar, `status` vira `RENTED` |
+| `ACTIVE` → `FINISHED` ou `CANCELLED` | `vagas_disponiveis + 1`. Se estava `RENTED`, `status` volta a `ACTIVE` |
+| `PENDING` → `CANCELLED` / `FINISHED` | Nenhum impacto (vaga nunca foi decrementada) |
+
+**Por que isso importa:** impede que o imóvel continue aparecendo como disponível após todos os quartos serem ocupados, e o reativa automaticamente quando um inquilino sai.
+
+**Função associada:** `fn_sincronizar_vagas_imovel()`  
+**Evento:** `AFTER UPDATE OF status_contrato ON contrato_locacao`  
+**Escopo:** `FOR EACH ROW`
+
+---
+
+#### Como Testar o Trigger
+
+##### Via SQL direto (DBeaver / pgAdmin)
+
+**Pré-requisito:** A aplicação deve estar rodando (`docker-compose up --build`) e o banco populado pelo seeder. Conecte-se ao banco usando as credenciais do `.env`.
+
+**Setup mínimo:**
+
+```sql
+-- Imóvel com 1 vaga
+INSERT INTO usuario (nome, email, cpf, senha) VALUES ('Proprietário', 'prop@test.com', '000.000.000-00', 'hash');
+INSERT INTO imovel (id_proprietario, titulo, tipo, preco, genero_moradores, vagas_disponiveis, status)
+VALUES (1, 'Casa Teste', 'HOUSE', 1200.00, 'MIXED', 1, 'ACTIVE');
+
+-- Estudante
+INSERT INTO usuario (nome, email, cpf, senha) VALUES ('Aluno', 'aluno@test.com', '111.111.111-11', 'hash');
+INSERT INTO estudante (id_estudante, curso, instituicao) VALUES (2, 'Engenharia', 'USP');
+
+-- Contrato pendente
+INSERT INTO contrato_locacao (id_imovel, id_estudante, id_proprietario, data_inicio, data_fim, valor_aluguel, status_contrato)
+VALUES (1, 2, 1, '2026-03-01', '2026-08-31', 1200.00, 'PENDING');
+```
+
+---
+
+**Teste 1 — Ativar contrato deve decrementar vaga e marcar imóvel como `RENTED`:**
+
+```sql
+UPDATE contrato_locacao SET status_contrato = 'ACTIVE' WHERE id_contrato = 1;
+
+-- Esperado: vagas_disponiveis = 0, status = 'RENTED'
+SELECT vagas_disponiveis, status FROM imovel WHERE id_imovel = 1;
+```
+
+**Teste 2 — Finalizar contrato deve devolver a vaga e reativar imóvel:**
+
+```sql
+UPDATE contrato_locacao SET status_contrato = 'FINISHED' WHERE id_contrato = 1;
+
+-- Esperado: vagas_disponiveis = 1, status = 'ACTIVE'
+SELECT vagas_disponiveis, status FROM imovel WHERE id_imovel = 1;
+```
+
+**Teste 3 — Cancelar contrato ainda `PENDING` não deve alterar vagas:**
+
+```sql
+-- Novo contrato pendente
+INSERT INTO contrato_locacao (id_imovel, id_estudante, id_proprietario, data_inicio, data_fim, valor_aluguel, status_contrato)
+VALUES (1, 2, 1, '2026-09-01', '2027-02-28', 1200.00, 'PENDING');
+
+UPDATE contrato_locacao SET status_contrato = 'CANCELLED' WHERE id_contrato = 2;
+
+-- Esperado: vagas_disponiveis permanece 1 (sem alteração)
+SELECT vagas_disponiveis, status FROM imovel WHERE id_imovel = 1;
+```
+
+**Teste 4 — Imóvel com múltiplas vagas (regressão):**
+
+```sql
+UPDATE imovel SET vagas_disponiveis = 3 WHERE id_imovel = 1;
+
+-- Ativar contrato não deve mudar status para RENTED (ainda sobram vagas)
+UPDATE contrato_locacao SET status_contrato = 'ACTIVE' WHERE id_contrato = 1;
+
+-- Esperado: vagas_disponiveis = 2, status = 'ACTIVE' (não 'RENTED')
+SELECT vagas_disponiveis, status FROM imovel WHERE id_imovel = 1;
+```
+
+---
+
+##### Via Frontend
+
+Todo o fluxo passa pelo chat de um imóvel — a tela de detalhe do chat já exibe o status do imóvel e as vagas em tempo real após cada ação.
+
+**Teste 1 — Aceitar contrato deve decrementar vaga (e marcar "Alugado" se zerar)**
+
+> Pré-condição: imóvel com `vagas_disponiveis = 1` e `status = ACTIVE`.
+
+1. Logar como **proprietário** → ir no chat com o estudante → clicar em **"Propor Contrato"** → preencher datas e valor → enviar
+2. Logar como **estudante** no mesmo chat → o card do contrato aparece com badge **"Pendente"**
+3. Clicar em **"Aceitar"** → o backend seta `PENDING → ACTIVE` → o trigger dispara
+4. Verificar na sidebar do chat: **"Situação do imóvel"** muda de `Ativo → Alugado` e **"Vagas disponíveis"** vai de `1 → 0`
+
+**Teste 2 — Recusar contrato (`PENDING`) não altera vagas**
+
+1. Com um novo contrato **Pendente**, logar como estudante → clicar em **"Recusar"**
+2. O backend seta `PENDING → CANCELLED`
+3. Verificar na sidebar: vagas e status do imóvel permanecem **inalterados** (trigger ignora essa transição)
+
+**Teste 3 — Vaga devolvida ao cancelar contrato ativo**
+
+> Atualmente o frontend não expõe botão de cancelamento para contratos `ACTIVE` — esse caminho é coberto diretamente via API ou ação de administrador.
+
+**O que observar na tela**
+
+No sidebar do chat, o componente consome `property.status` e `property.availableVacancies` e atualiza imediatamente após cada ação — exatamente os campos que o trigger altera. Os dados são recarregados automaticamente via `loadProperty()` após `acceptContract` / `rejectContract`.
+
+---
+
+## Correções e Melhorias em Relação à Versão Anterior
+
+| # | O que foi corrigido / adicionado | Categoria |
+|:--|:---------------------------------|:----------|
+| 1 | Adicionado seeder automático (`CommandLineRunner` + **DataFaker**) que popula o banco com dados realistas ao subir o ambiente pela primeira vez | Dados |
+| 2 | Criadas **3 views** no banco (`v_detalhes_imovel`, `v_relatorio_proprietario`, `v_perfil_estudante_contato`) eliminando JOINs repetidos no backend | Banco de Dados |
+| 3 | Implementado o trigger `trg_atualizar_vagas_contrato` que sincroniza automaticamente `vagas_disponiveis` e `status` do imóvel ao ativar/cancelar contratos | Banco de Dados |
+| 4 | Adicionado script `03-triggers.sql` ao pipeline de inicialização do Docker | DevOps |
+| 5 | README atualizado com diagrama ER, dicionário de dados, documentação das views e do trigger | Documentação |
 
 ---
 
